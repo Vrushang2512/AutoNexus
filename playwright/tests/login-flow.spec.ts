@@ -119,8 +119,8 @@ test('AutoNexus 8-Step Login Flow', async ({ page }) => {
   // Use force click in case any overlay remnant lingers
   await loginButton.click({ timeout: 15000 });
 
-  // Wait for redirect to dashboard = login worked
-  await page.waitForURL('**/dashboard/**', { timeout: 30000 });
+  // Wait for redirect after login (Envizom goes to /#/overview/map)
+  await page.waitForURL('**/overview/**', { timeout: 30000 });
 
   console.log('  PASS - Login successful. Redirected to: ' + page.url());
 
