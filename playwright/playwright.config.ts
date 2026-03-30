@@ -8,13 +8,9 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: [
-    ['html', { open: 'never' }],
-    ['list']
-  ],
-
+  reporter: [['html', { open: 'never' }], ['list']],
   use: {
     baseURL: process.env.ENVIZOM_BASE_URL || 'https://envizom.oizom.com',
     trace: 'on-first-retry',
@@ -23,13 +19,6 @@ export default defineConfig({
     actionTimeout: 15000,
     navigationTimeout: 30000,
   },
-
-  timeout: 60000,
-
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
+  timeout: 90000,
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });
