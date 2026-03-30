@@ -130,9 +130,8 @@ test('AutoNexus 8-Step Login Flow', async ({ page }) => {
   // ═════════════════════════════════════════
   console.log('\nSTEP 6: Look for the APIs');
 
-  // Wait for dashboard to load and fire all API calls
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(6000);
+  // Wait for APIs to fire (dashboard loads real-time data continuously, so networkidle won't work)
+  await page.waitForTimeout(10000);
 
   const loginApi = apiCalls.find(a => a.endpoint.includes('login'));
   const overviewApi = apiCalls.find(a => a.endpoint.includes('overview'));
