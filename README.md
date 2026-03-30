@@ -1,109 +1,64 @@
 # AutoNexus
 
-Test automation platform for [Envizom](https://envizom.oizom.com) — Oizom's environmental monitoring software.
+Test automation for [Envizom](https://envizom.oizom.com) — runs a real browser, logs into the platform, captures all API calls, and generates a devices report.
 
-## What's Inside
+## The 8-Step Test
 
-### 1. AutoNexus Dashboard (`/dashboard`)
-A web-based test console with a prompt interface. Type `do login` and it runs **9 live API tests** against Envizom's backend, then displays all devices in the account.
-
-**Features:**
-- Prompt-driven command interface
-- Login API validation (status, token, userId, response time)
-- Negative tests (wrong password, empty email)
-- Overview API fetch with device discovery
-- Devices table with search, filter (online/offline), and status indicators
-
-**Commands:**
-| Command | Action |
-|---------|--------|
-| `do login` | Run all login tests + fetch devices |
-| `clear` | Reset results |
-| `help` | Show commands |
-
-### 2. Playwright Tests (`/playwright`)
-28 automated browser tests covering the entire Envizom login page using Playwright + TypeScript.
-
-**Test Suites:**
-| Suite | Tests | Coverage |
-|-------|-------|----------|
-| UI Rendering | 5 | Headings, placeholders, element visibility |
-| Button State | 5 | Disabled/enabled based on form validity |
-| Form Validation | 3 | Email format, required field errors |
-| Password Toggle | 3 | Show/hide password via eye icon |
-| Terms & Conditions | 3 | Checkbox check/uncheck |
-| Successful Auth | 4 | Login, redirect, API 200, token, speed |
-| Failed Auth | 4 | Error messages, wrong credentials |
-| Forgot Password | 2 | Link visibility, triggers flow |
+| Step | What it does |
+|------|-------------|
+| 1 | Opens `envizom.oizom.com` in a real browser, verifies the login page loads |
+| 2 | Types the email into the email field |
+| 3 | Types the password into the password field |
+| 4 | Clicks the Terms & Conditions checkbox |
+| 5 | Clicks the LOG IN button, waits for redirect to dashboard |
+| 6 | Intercepts all API calls to `envdevapi.oizom.com` (login, overview, devices) |
+| 7 | Records every API — method, endpoint, status — saves to `captured-apis.json` |
+| 8 | Extracts devices from API responses, generates an HTML report with the devices table |
 
 ## Quick Start
 
-### Playwright Tests
 ```bash
 cd playwright
 npm install
 npx playwright install
-cp .env.example .env          # Add your credentials
-npm test                      # Run all 28 tests
-npm run test:headed           # Watch tests in browser
-npm run test:debug            # Step-through debug mode
+cp .env.example .env     # Add your credentials
+npm test                 # Run the 8-step test
 ```
 
-### AutoNexus Dashboard
-The `dashboard/autonexus.jsx` is a React component. You can run it in any React environment or use it as a Claude Artifact.
+## Output
+
+After the test runs, you get:
+
+- `test-results/devices-report.html` — Full HTML report with API table + devices table
+- `test-results/captured-apis.json` — Raw API responses
+- Console output with step-by-step logs and ASCII tables
+
+## GitHub Actions
+
+Tests run automatically on every push. Add these secrets in **Settings → Secrets → Actions**:
+
+| Secret | Value |
+|--------|-------|
+| `ENVIZOM_BASE_URL` | `https://envizom.oizom.com` |
+| `ENVIZOM_EMAIL` | your login email |
+| `ENVIZOM_PASSWORD` | your login password |
+
+After the workflow runs, download the **devices-report** artifact from the Actions tab.
 
 ## Project Structure
 
 ```
 AutoNexus/
-├── README.md
+├── .github/workflows/
+│   └── login-tests.yml         # GitHub Actions workflow
+├── playwright/
+│   ├── tests/
+│   │   └── login-flow.spec.ts  # The 8-step test
+│   ├── playwright.config.ts
+│   ├── package.json
+│   └── .env.example
 ├── .gitignore
-│
-├── dashboard/
-│   └── autonexus.jsx              # Web-based test console (React)
-│
-└── playwright/
-    ├── package.json               # Dependencies & scripts
-    ├── playwright.config.ts       # Browser & SPA settings
-    ├── .env.example               # Credential template
-    │
-    ├── pages/
-    │   └── LoginPage.ts           # Page Object (Angular Material selectors)
-    │
-    ├── tests/
-    │   └── login.spec.ts          # 28 test cases, 8 suites
-    │
-    └── utils/
-        └── config.ts              # .env loader & validator
+└── README.md
 ```
 
-## API Endpoints Tested
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/users/login/v2` | POST | Authentication |
-| `/users/{id}/overview/v2` | GET | User profile, devices, modules |
-| `/devices/data` | GET | Latest sensor readings |
-
-## Tech Stack
-
-- **Test Framework:** Playwright + TypeScript
-- **Target App:** Angular 16+ with Angular Material
-- **Dashboard:** React (JSX)
-- **CI/CD Ready:** GitHub Actions compatible
-
-## Roadmap
-
-- [x] Login page automation
-- [x] Login API validation
-- [x] Device discovery
-- [ ] Dashboard tests
-- [ ] Reports & download tests
-- [ ] Analytics & heatmap tests
-- [ ] Data equivalence (API vs UI)
-- [ ] Visual regression testing
-- [ ] CI/CD pipeline (GitHub Actions)
-
-## Author
-
-Built for Envizom by [Vrushang2512](https://github.com/Vrushang2512)
+Built by [Vrushang2512](https://github.com/Vrushang2512)
