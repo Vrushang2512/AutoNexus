@@ -1,12 +1,11 @@
 {
-  "name": "envizom-login-tests",
-  "version": "1.0.0",
-  "description": "Login test automation for Envizom platform",
+  "name": "autonexus",
+  "version": "2.0.0",
+  "description": "AutoNexus — Envizom Test Automation",
   "scripts": {
     "test": "npx playwright test",
     "test:headed": "npx playwright test --headed",
     "test:debug": "npx playwright test --debug",
-    "test:ui": "npx playwright test --ui",
     "report": "npx playwright show-report"
   },
   "devDependencies": {
