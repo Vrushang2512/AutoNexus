@@ -1,4 +1,4 @@
-name: AutoNexus Login Tests
+name: AutoNexus Tests
 
 on:
   push:
@@ -6,38 +6,48 @@ on:
   workflow_dispatch:
 
 jobs:
-  login-tests:
-    name: Run Login Tests
+  login-test:
+    name: 8-Step Login Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     defaults:
       run:
         working-directory: playwright
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Install dependencies
         run: npm install
 
-      - name: Install Playwright browsers
+      - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Run tests
+      - name: Run 8-step login test
         run: npx playwright test
         env:
           ENVIZOM_BASE_URL: ${{ secrets.ENVIZOM_BASE_URL }}
           ENVIZOM_EMAIL: ${{ secrets.ENVIZOM_EMAIL }}
           ENVIZOM_PASSWORD: ${{ secrets.ENVIZOM_PASSWORD }}
 
-      - name: Upload report
+      - name: Upload devices report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devices-report
+          path: playwright/test-results/devices-report.html
+
+      - name: Upload captured APIs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: captured-apis
+          path: playwright/test-results/captured-apis.json
+
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
