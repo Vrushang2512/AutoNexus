@@ -92,9 +92,20 @@ test('AutoNexus 8-Step Login Flow', async ({ page }) => {
   console.log('\nSTEP 4: Click on checkbox');
 
   await page.locator('mat-checkbox[formcontrolname="termsAndConditions"]').click();
+
+  // Terms & Conditions dialog pops up — click AGREE to close it
+  const agreeButton = page.locator('button:has-text("AGREE")');
+  await agreeButton.waitFor({ state: 'visible', timeout: 10000 });
+  console.log('  Terms dialog opened — clicking AGREE...');
+  await agreeButton.click();
+
+  // Wait for dialog to close
+  await agreeButton.waitFor({ state: 'hidden', timeout: 5000 });
+
+  // Verify checkbox is checked after agreeing
   await expect(page.locator('#mat-mdc-checkbox-1-input')).toBeChecked();
 
-  console.log('  PASS - Terms & Conditions checkbox is checked.');
+  console.log('  PASS - Terms accepted and checkbox is checked.');
 
 
   // ═════════════════════════════════════════
@@ -104,7 +115,9 @@ test('AutoNexus 8-Step Login Flow', async ({ page }) => {
 
   const loginButton = page.locator('button:has-text("LOG IN")');
   await expect(loginButton).toBeEnabled({ timeout: 5000 });
-  await loginButton.click();
+
+  // Use force click in case any overlay remnant lingers
+  await loginButton.click({ timeout: 15000 });
 
   // Wait for redirect to dashboard = login worked
   await page.waitForURL('**/dashboard/**', { timeout: 30000 });
