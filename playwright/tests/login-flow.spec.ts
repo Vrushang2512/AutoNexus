@@ -246,61 +246,47 @@ test('AutoNexus 8-Step Login Flow', async ({ page }) => {
   let devices: any[] = [];
 
   if (devicesApiResponse?.body) {
+    // API returns an array: [{deviceId, deviceType, payload: [{deviceId, deviceType, keys, payload: {t, s, d}}]}]
     const rawDevices = Array.isArray(devicesApiResponse.body) ? devicesApiResponse.body : [];
 
-    // If it's not an array, try to extract from object
-    let deviceList = rawDevices;
-    if (deviceList.length === 0 && typeof devicesApiResponse.body === 'object') {
-      // Try common keys
-      for (const key of Object.keys(devicesApiResponse.body)) {
-        const val = devicesApiResponse.body[key];
-        if (Array.isArray(val) && val.length > 0) {
-          deviceList = val;
-          break;
-        }
-      }
-      // If still empty, wrap values
-      if (deviceList.length === 0) {
-        deviceList = Object.entries(devicesApiResponse.body).map(([k, v]: [string, any]) => ({
-          id: k, ...(typeof v === 'object' ? v : {}),
-        }));
-      }
-    }
-
     const currentTimestamp = Math.floor(Date.now() / 1000);
+    const THIRTY_MINUTES = 30 * 60;
 
-    devices = deviceList.map((device: any, i: number) => {
-      // Determine online/offline status using payload.d.t logic
+    console.log('  Current timestamp: ' + currentTimestamp + ' (' + new Date().toLocaleString() + ')');
+    console.log('  Raw devices count: ' + rawDevices.length);
+
+    devices = rawDevices.map((device: any, i: number) => {
+      // Structure: device.payload[0].payload.d.t = epoch timestamp
+      //            device.payload[0].payload.s.loc = location name
+      const innerPayload = device.payload?.[0]?.payload;
+      const lastActiveTime = innerPayload?.d?.t || 0;
+      const locationName = innerPayload?.s?.loc || '-';
+      const deviceType = device.deviceType || device.payload?.[0]?.deviceType || '-';
+      const deviceId = device.deviceId || device.payload?.[0]?.deviceId || 'device-' + (i + 1);
+
+      // Online = last active within 30 minutes, else Offline
       let status = 'Offline';
       let statusColor = '#D32F2F';
 
-      if (device.payload?.d?.t) {
-        const lastActiveTime = device.payload.d.t;
-        if (lastActiveTime > currentTimestamp - 60 * 60) {
-          status = 'Online';
-          statusColor = '#4CAF50';
-        } else if (lastActiveTime > currentTimestamp - 24 * 60 * 60) {
-          status = 'Not Connected';
-          statusColor = '#fcdc01';
-        } else {
-          status = 'Offline';
-          statusColor = '#D32F2F';
-        }
+      if (lastActiveTime > 0 && lastActiveTime > currentTimestamp - THIRTY_MINUTES) {
+        status = 'Online';
+        statusColor = '#4CAF50';
       }
 
       return {
-        id: device.deviceId || device.device_id || device.id || device.serialNumber || 'device-' + (i + 1),
-        name: device.deviceName || device.device_name || device.name || device.label || device.payload?.d?.n || '-',
-        type: device.deviceType || device.device_type || device.type || device.model || '-',
-        location: device.location || device.locationName || device.location_name || device.city || '-',
+        id: deviceId,
+        name: deviceId, // Device ID is used as name since API doesn't have a separate name field
+        type: deviceType,
+        location: locationName,
         status,
         statusColor,
-        lastSeen: device.payload?.d?.t ? new Date(device.payload.d.t * 1000).toLocaleString() : '-',
+        lastSeen: lastActiveTime > 0 ? new Date(lastActiveTime * 1000).toLocaleString() : 'Never',
+        lastActiveTime,
       };
     });
   }
 
-  // Also try overview API if devices API didn't work
+  // Fallback: try other APIs if devices API didn't have the data
   if (devices.length === 0) {
     for (const api of apiCalls) {
       if (api.body && !api.endpoint.includes('login')) {
@@ -312,21 +298,21 @@ test('AutoNexus 8-Step Login Flow', async ({ page }) => {
 
   if (devices.length > 0) {
     const onlineCount = devices.filter((d: any) => d.status === 'Online').length;
-    const notConnected = devices.filter((d: any) => d.status === 'Not Connected').length;
     const offlineCount = devices.filter((d: any) => d.status === 'Offline').length;
 
     console.log('\n  Devices found: ' + devices.length);
-    console.log('  Online: ' + onlineCount + ' | Not Connected: ' + notConnected + ' | Offline: ' + offlineCount);
+    console.log('  Online: ' + onlineCount + ' | Offline: ' + offlineCount);
     console.log('');
-    console.log('  #  | Device ID            | Name                 | Status         | Last Seen');
-    console.log('  ---|----------------------|----------------------|----------------|--------------------');
+    console.log('  #  | Device ID            | Type           | Location             | Status  | Last Seen');
+    console.log('  ---|----------------------|----------------|----------------------|---------|--------------------');
     devices.forEach((d: any, i: number) => {
       const n = String(i + 1).padStart(2);
       const id = (d.id || '-').substring(0, 20).padEnd(20);
-      const nm = (d.name || '-').substring(0, 20).padEnd(20);
-      const st = (d.status || '-').padEnd(14);
+      const tp = (d.type || '-').substring(0, 14).padEnd(14);
+      const loc = (d.location || '-').substring(0, 20).padEnd(20);
+      const st = (d.status || '-').padEnd(7);
       const ls = (d.lastSeen || '-').substring(0, 19);
-      console.log('  ' + n + ' | ' + id + ' | ' + nm + ' | ' + st + ' | ' + ls);
+      console.log('  ' + n + ' | ' + id + ' | ' + tp + ' | ' + loc + ' | ' + st + ' | ' + ls);
     });
   } else {
     console.log('  WARNING: Could not extract devices. API response keys:');
@@ -375,7 +361,6 @@ function norm(list: any[]): any[] {
 
 function generateHtml(apis: any[], devices: any[]): string {
   const onlineCount = devices.filter(d => d.status === 'Online').length;
-  const notConnCount = devices.filter(d => d.status === 'Not Connected').length;
   const offlineCount = devices.filter(d => d.status === 'Offline').length;
 
   const apiRows = apis.map((a, i) =>
@@ -383,17 +368,17 @@ function generateHtml(apis: any[], devices: any[]): string {
   ).join('');
 
   const devRows = devices.map((d, i) => {
-    const dotClass = d.status === 'Online' ? 'on' : d.status === 'Not Connected' ? 'nc' : 'off';
-    return '<tr><td>' + (i+1) + '</td><td class="di">' + d.id + '</td><td>' + d.name + '</td><td>' + d.type + '</td><td>' + d.location + '</td><td><span class="dot ' + dotClass + '"></span>' + d.status + '</td><td class="ls">' + (d.lastSeen || '-') + '</td></tr>';
+    const isOnline = d.status === 'Online';
+    return '<tr><td>' + (i+1) + '</td><td class="di">' + d.id + '</td><td>' + d.type + '</td><td>' + d.location + '</td><td><span class="dot ' + (isOnline ? 'on' : 'off') + '"></span>' + d.status + '</td><td class="ls">' + (d.lastSeen || '-') + '</td></tr>';
   }).join('');
 
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AutoNexus Report</title>' +
     '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#0C0E14;color:#C9D1D9;padding:24px}' +
     'h1{font-size:22px;color:#E6EDF3;margin-bottom:4px}h1 span{color:#7EB6FF}.sub{font-size:13px;color:#484F58;margin-bottom:24px}' +
     'h2{font-size:16px;color:#E6EDF3;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #1A1D24}' +
-    '.stats{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}.stat{background:#0D1017;border:1px solid #1A1D24;border-radius:8px;padding:14px 18px;text-align:center;min-width:80px}' +
+    '.stats{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}.stat{background:#0D1017;border:1px solid #1A1D24;border-radius:8px;padding:14px 18px;text-align:center;min-width:100px}' +
     '.stat-n{font-size:26px;font-weight:600;color:#E6EDF3}.stat-l{font-size:11px;color:#484F58;margin-top:2px;text-transform:uppercase}' +
-    '.stat-on .stat-n{color:#4CAF50}.stat-nc .stat-n{color:#fcdc01}.stat-off .stat-n{color:#D32F2F}' +
+    '.stat-on .stat-n{color:#4CAF50}.stat-off .stat-n{color:#D32F2F}' +
     'table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px}' +
     'th{text-align:left;padding:10px 12px;background:#12151C;color:#484F58;font-size:11px;text-transform:uppercase;font-weight:500;border-bottom:1px solid #1A1D24}' +
     'td{padding:9px 12px;border-bottom:1px solid #1A1D24}tr:hover{background:rgba(255,255,255,0.02)}' +
@@ -401,7 +386,7 @@ function generateHtml(apis: any[], devices: any[]): string {
     '.ep{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
     '.sok{color:#4ADE80;font-weight:600}.ser{color:#F87171;font-weight:600}.di{font-weight:500;color:#E6EDF3;font-family:monospace}' +
     '.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}' +
-    '.on{background:#4CAF50}.nc{background:#fcdc01}.off{background:#D32F2F}' +
+    '.on{background:#4CAF50}.off{background:#D32F2F}' +
     '.ls{color:#484F58;font-size:12px}' +
     '.ft{text-align:center;color:#21262D;font-size:11px;margin-top:32px}</style></head>' +
     '<body><h1>AUTO<span>NEXUS</span> Report</h1><p class="sub">Generated: ' + new Date().toLocaleString() + '</p>' +
@@ -409,9 +394,8 @@ function generateHtml(apis: any[], devices: any[]): string {
     '<div class="stat"><div class="stat-n">' + apis.length + '</div><div class="stat-l">APIs</div></div>' +
     '<div class="stat"><div class="stat-n">' + devices.length + '</div><div class="stat-l">Total Devices</div></div>' +
     '<div class="stat stat-on"><div class="stat-n">' + onlineCount + '</div><div class="stat-l">Online</div></div>' +
-    '<div class="stat stat-nc"><div class="stat-n">' + notConnCount + '</div><div class="stat-l">Not Connected</div></div>' +
     '<div class="stat stat-off"><div class="stat-n">' + offlineCount + '</div><div class="stat-l">Offline</div></div></div>' +
     '<h2>Captured APIs</h2><table><thead><tr><th>#</th><th>Method</th><th>Endpoint</th><th>Status</th></tr></thead><tbody>' + apiRows + '</tbody></table>' +
-    '<h2>Devices (' + devices.length + ')</h2><table><thead><tr><th>#</th><th>Device ID</th><th>Name</th><th>Type</th><th>Location</th><th>Status</th><th>Last Seen</th></tr></thead><tbody>' + devRows + '</tbody></table>' +
+    '<h2>Devices (' + devices.length + ')</h2><table><thead><tr><th>#</th><th>Device ID</th><th>Type</th><th>Location</th><th>Status</th><th>Last Seen</th></tr></thead><tbody>' + devRows + '</tbody></table>' +
     '<p class="ft">AutoNexus v3.0</p></body></html>';
 }
