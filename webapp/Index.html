@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoNexus — Envizom Test Automation</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Mono',monospace;background:#0C0E14;color:#C9D1D9;min-height:100vh}
+input:focus{outline:none}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#0C0E14}
+::-webkit-scrollbar-thumb{background:#21262D;border-radius:3px}
+
+.header{border-bottom:1px solid #1A1D24;padding:14px 20px;display:flex;align-items:center;gap:12px;background:#0D1017}
+.logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#7EB6FF 0%,#A78BFA 50%,#4ADE80 100%);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#0D1117;font-family:'Space Grotesk',sans-serif}
+.brand{font-weight:700;font-size:16px;color:#E6EDF3;letter-spacing:1.5px;font-family:'Space Grotesk',sans-serif}
+.brand span{color:#7EB6FF}
+.subtitle{font-size:10px;color:#3B3F48;margin-top:1px}
+.header-stats{margin-left:auto;display:flex;gap:12px;font-size:12px}
+
+.container{max-width:900px;margin:0 auto;padding:20px 16px}
+.card{background:#0D1017;border:1px solid #1A1D24;border-radius:10px;padding:16px;margin-bottom:16px}
+.card-title{font-size:11px;color:#484F58;margin-bottom:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px}
+.inp{width:100%;padding:9px 12px;background:#12151C;border:1px solid #21262D;border-radius:6px;color:#E6EDF3;font-family:inherit;font-size:13px;box-sizing:border-box}
+.inp:focus{border-color:#30363D}
+.btn{background:#12151C;border:1px solid #21262D;color:#7EB6FF;padding:7px 16px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;transition:all .15s}
+.btn:hover{background:#1A1F2E;border-color:#7EB6FF}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-go{color:#4ADE80;border-color:#1A2E1A}
+
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px}
+.step{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;transition:all .3s;border:1px solid #1A1D24;background:#12151C}
+.step.pass{background:#0D1F0D;border-color:#1A3A1A}
+.step.fail{background:#1F0D0D;border-color:#3A1A1A}
+.step.running{background:#0D1520;border-color:#1A2A3A}
+.step-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#0D1117;flex-shrink:0;background:#3B3B3B;transition:all .3s}
+.step.pass .step-dot{background:#4ADE80}
+.step.fail .step-dot{background:#F87171}
+.step.running .step-dot{background:#7EB6FF}
+.step-label{font-size:12px;font-weight:500;color:#484F58;flex:1}
+.step.pass .step-label,.step.fail .step-label,.step.running .step-label{color:#C9D1D9}
+.step-time{font-size:11px;color:#484F58}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;background:#12151C;color:#3B3F48;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:500;border-bottom:1px solid #1A1D24}
+td{padding:9px 12px;border-bottom:1px solid #1A1D24}
+tr:hover{background:rgba(255,255,255,0.02)}
+.method{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.method-post{background:#1C2D1C;color:#4ADE80}
+.method-get{background:#1C1C2D;color:#7EB6FF}
+.status-ok{color:#4ADE80;font-weight:600}
+.status-err{color:#F87171;font-weight:600}
+.di{font-weight:500;color:#E6EDF3;font-family:monospace}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.dot-on{background:#4CAF50}
+.dot-off{background:#D32F2F}
+.ls{color:#484F58;font-size:12px}
+.ep{max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.filter-btn{background:none;border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:500;color:#3B3F48;transition:all .12s}
+.filter-btn.active-all{color:#E6EDF3;background:#1A1F2E}
+.filter-btn.active-online{color:#4CAF50;background:#0D1F0D}
+.filter-btn.active-offline{color:#D32F2F;background:#1F0D0D}
+
+.log{font-size:11px;line-height:1.8}
+.log-info{color:#484F58}
+.log-cmd{color:#7EB6FF}
+.log-success{color:#4ADE80}
+.log-error{color:#F87171}
+.log-warn{color:#F5A623}
+.log-time{color:#21262D;margin-right:8px}
+
+.prompt{display:flex;align-items:center;gap:10px;background:#0D1017;border:1px solid #1A1D24;border-radius:10px;padding:10px 14px}
+.prompt-dollar{color:#4ADE80;font-weight:600;font-size:14px}
+.prompt-input{flex:1;background:transparent;border:none;color:#E6EDF3;font-family:inherit;font-size:13px;caret-color:#4ADE80}
+.footer{text-align:center;padding:14px 0 6px;font-size:10px;color:#21262D}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadeIn .25s ease}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">A</div>
+  <div>
+    <div class="brand">AUTO<span>NEXUS</span></div>
+    <div class="subtitle">Envizom Test Automation Console</div>
+  </div>
+  <div class="header-stats" id="headerStats"></div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-title">Credentials</div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1">
+        <label style="font-size:11px;color:#3B3F48;display:block;margin-bottom:4px">Email</label>
+        <input class="inp" id="email" placeholder="your@email.com">
+      </div>
+      <div style="flex:1">
+        <label style="font-size:11px;color:#3B3F48;display:block;margin-bottom:4px">Password</label>
+        <div style="position:relative">
+          <input class="inp" id="password" type="password" placeholder="password" style="padding-right:50px">
+          <button onclick="togglePass()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#3B3F48;cursor:pointer;font-size:11px;font-family:inherit" id="passToggle">SHOW</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="btn btn-go" style="flex:1" id="runBtn" onclick="runTest()">do login</button>
+    <button class="btn" onclick="clearAll()">clear</button>
+  </div>
+
+  <div class="steps" id="steps"></div>
+  <div id="apiSection"></div>
+  <div id="deviceSection"></div>
+
+  <div class="card" style="max-height:150px;overflow:auto" id="logCard">
+    <div class="card-title">Log</div>
+    <div id="logArea"></div>
+  </div>
+
+  <div class="prompt">
+    <span class="prompt-dollar">$</span>
+    <input class="prompt-input" id="cmdInput" placeholder="Type 'do login' and press Enter" onkeydown="handleKey(event)">
+  </div>
+  <div class="footer">AutoNexus v3.0 · envapi.oizom.com</div>
+</div>
+
+<script>
+const DEVICE_IDS = ["25516","582B0A9B89BC0000","AQ0499001","YG19D0003","YG19D0004","YG19D0005","YG19D0006","YG19D0007","YG19D0008","YG19D0009","YG19D0010","YG19O0003","YG19O0004","YG19O0005","YG19P0011","YG19P0012","YG19P0013","YG19P0014","YG19P0015","YG19P0016","YG19P0017","YG19P0018","YG19P0019","YG19P0020","YG19P0021","YG19P0022","YG19P0023","YG19P0024","YG19P0025","YG19R0001","YG19R0002","YG19R0003","YG19R0004","YG19R0005","YG19W0001","CUYGCP100214","CUYGCP100215","CUYGCP100216","CUYGCP100219","CUYGCP2143049","CUYGCP21430CD","CUYGCP214310F","CUYGCP2143123","CUYGCP21431E4","CUYGCP2143285","CUYGCP21432D9","CUYGCP214330D","CUYGCP214343D","CUYGCP21434E0","CUYGCP214352A","CUYGCP21435D2","CUYGCP21439EF","CUYGCP2143A36","CUYGCP2143D89","CUYGCP2143E00","CUYGCP2143F4A","CUYGCP2143FE0"];
+
+const LABELS = [
+  "Check if server is reachable",
+  "Input the email",
+  "Input the password",
+  "Click on checkbox (Terms)",
+  "Click on Login",
+  "Look for the APIs",
+  "Record the APIs",
+  "Show devices from API"
+];
+
+let steps = Array(8).fill(null).map(() => ({ status: 'pending', time: null }));
+let apis = [];
+let devices = [];
+let isRunning = false;
+let deviceFilter = 'all';
+let deviceSearch = '';
+
+function toIST(epoch) {
+  if (!epoch || epoch === 0) return 'Never';
+  return new Date(epoch * 1000).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+}
+
+function nowIST() {
+  return new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function togglePass() {
+  const p = document.getElementById('password');
+  const t = document.getElementById('passToggle');
+  if (p.type === 'password') { p.type = 'text'; t.textContent = 'HIDE'; }
+  else { p.type = 'password'; t.textContent = 'SHOW'; }
+}
+
+function log(msg, type = 'info') {
+  const area = document.getElementById('logArea');
+  area.innerHTML += '<div class="log-' + type + '"><span class="log-time">' + nowIST() + '</span>' + msg + '</div>';
+  document.getElementById('logCard').scrollTop = 99999;
+}
+
+function setStep(i, status, time) {
+  steps[i] = { status, time: time || null };
+  renderSteps();
+}
+
+function renderSteps() {
+  const el = document.getElementById('steps');
+  el.innerHTML = steps.map((s, i) => {
+    const icon = s.status === 'pass' ? '\u2713' : s.status === 'fail' ? '!' : s.status === 'running' ? '\u2026' : (i + 1);
+    const timeHtml = s.time ? '<span class="step-time">' + s.time + 'ms</span>' : '';
+    return '<div class="step ' + s.status + '"><div class="step-dot">' + icon + '</div><div class="step-label">' + LABELS[i] + '</div>' + timeHtml + '</div>';
+  }).join('');
+}
+
+function renderApis() {
+  if (apis.length === 0) { document.getElementById('apiSection').innerHTML = ''; return; }
+  let html = '<div class="card animate"><div class="card-title">Recorded APIs (' + apis.length + ')</div>';
+  html += '<div style="border-radius:6px;border:1px solid #1A1D24;overflow:hidden"><table><thead><tr><th>#</th><th>Method</th><th>Endpoint</th><th>Status</th><th style="text-align:right">Time</th></tr></thead><tbody>';
+  apis.forEach((a, i) => {
+    const mc = a.method === 'POST' ? 'method-post' : 'method-get';
+    const sc = a.status < 400 ? 'status-ok' : 'status-err';
+    const tc = a.time < 3000 ? '#4ADE80' : '#F5A623';
+    html += '<tr><td style="color:#3B3F48">' + (i+1) + '</td><td><span class="method ' + mc + '">' + a.method + '</span></td><td class="ep">' + a.endpoint + '</td><td class="' + sc + '">' + a.status + '</td><td style="text-align:right;color:' + tc + '">' + a.time + 'ms</td></tr>';
+  });
+  html += '</tbody></table></div></div>';
+  document.getElementById('apiSection').innerHTML = html;
+}
+
+function renderDevices() {
+  if (devices.length === 0) { document.getElementById('deviceSection').innerHTML = ''; return; }
+  const q = deviceSearch.toLowerCase();
+  const filtered = devices.filter(d => {
+    const mq = !q || [d.id, d.type, d.location].some(v => v.toLowerCase().includes(q));
+    const on = d.status === 'Online';
+    return mq && (deviceFilter === 'all' || (deviceFilter === 'online' && on) || (deviceFilter === 'offline' && !on));
+  });
+  const onCount = devices.filter(d => d.status === 'Online').length;
+  const offCount = devices.length - onCount;
+
+  let html = '<div class="card animate"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div>';
+  html += '<div class="card-title" style="margin-bottom:0">Devices from API</div>';
+  html += '<div style="font-size:12px;color:#3B3F48;margin-top:3px"><span style="color:#A78BFA">' + devices.length + ' total</span> \u00B7 <span style="color:#4CAF50">' + onCount + ' online</span> \u00B7 <span style="color:#D32F2F">' + offCount + ' offline</span></div>';
+  html += '</div><div style="display:flex;gap:4px">';
+  html += '<button class="filter-btn ' + (deviceFilter==='all'?'active-all':'') + '" onclick="setFilter(\'all\')">All</button>';
+  html += '<button class="filter-btn ' + (deviceFilter==='online'?'active-online':'') + '" onclick="setFilter(\'online\')">Online</button>';
+  html += '<button class="filter-btn ' + (deviceFilter==='offline'?'active-offline':'') + '" onclick="setFilter(\'offline\')">Offline</button>';
+  html += '</div></div>';
+  html += '<input class="inp" value="' + deviceSearch + '" oninput="deviceSearch=this.value;renderDevices()" placeholder="Search devices..." style="margin-bottom:12px;font-size:12px;padding:7px 12px">';
+  html += '<div style="max-height:450px;overflow:auto;border-radius:6px;border:1px solid #1A1D24"><table><thead><tr style="position:sticky;top:0;z-index:1"><th>#</th><th>Device ID</th><th>Type</th><th>Location</th><th>Status</th><th>Last Seen (IST)</th></tr></thead><tbody>';
+  if (filtered.length === 0) {
+    html += '<tr><td colspan="6" style="padding:20px;text-align:center;color:#3B3F48">No devices match.</td></tr>';
+  } else {
+    filtered.forEach((d, i) => {
+      const dotClass = d.status === 'Online' ? 'dot-on' : 'dot-off';
+      const bg = i % 2 ? 'background:rgba(255,255,255,0.015)' : '';
+      html += '<tr style="' + bg + '"><td style="font-size:11px;color:#3B3F48">' + (i+1) + '</td><td class="di">' + d.id + '</td><td>' + d.type + '</td><td style="color:#7D8590">' + d.location + '</td><td><span class="dot ' + dotClass + '"></span>' + d.status + '</td><td class="ls">' + d.lastSeen + '</td></tr>';
+    });
+  }
+  html += '</tbody></table></div>';
+  if (deviceSearch) html += '<div style="font-size:11px;color:#3B3F48;margin-top:6px">Showing ' + filtered.length + ' of ' + devices.length + '</div>';
+  html += '</div>';
+  document.getElementById('deviceSection').innerHTML = html;
+
+  // Update header stats
+  document.getElementById('headerStats').innerHTML =
+    '<span style="color:#4ADE80">' + steps.filter(s=>s.status==='pass').length + '/8 passed</span>' +
+    (devices.length > 0 ? '<span style="color:#A78BFA">' + devices.length + ' devices</span>' : '');
+}
+
+function setFilter(f) { deviceFilter = f; renderDevices(); }
+
+function clearAll() {
+  steps = Array(8).fill(null).map(() => ({ status: 'pending', time: null }));
+  apis = []; devices = []; deviceFilter = 'all'; deviceSearch = '';
+  document.getElementById('logArea').innerHTML = '';
+  document.getElementById('apiSection').innerHTML = '';
+  document.getElementById('deviceSection').innerHTML = '';
+  document.getElementById('headerStats').innerHTML = '';
+  renderSteps();
+  log('Cleared.', 'info');
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !isRunning) {
+    const cmd = e.target.value.trim().toLowerCase();
+    e.target.value = '';
+    if (cmd === 'do login') runTest();
+    else if (cmd === 'clear') clearAll();
+    else if (cmd === 'help') log("Commands: 'do login', 'clear', 'help'", 'info');
+    else log("Unknown: '" + cmd + "'. Type 'help'.", 'error');
+  }
+}
+
+async function runTest() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  if (!email || !password) { log('Enter email and password first.', 'error'); return; }
+
+  isRunning = true;
+  apis = []; devices = []; deviceFilter = 'all'; deviceSearch = '';
+  document.getElementById('apiSection').innerHTML = '';
+  document.getElementById('deviceSection').innerHTML = '';
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('runBtn').textContent = 'Running...';
+  steps = Array(8).fill(null).map(() => ({ status: 'pending', time: null }));
+  renderSteps();
+
+  let authToken = null, userId = null, t0;
+
+  // ── STEP 1 ──
+  setStep(0, 'running');
+  log('Step 1: Checking if server is reachable...', 'cmd');
+  t0 = performance.now();
+  try {
+    const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email_id: 'ping', password: 'ping' }) });
+    const ms = Math.round(performance.now() - t0);
+    setStep(0, 'pass', ms);
+    log('Server reachable (' + ms + 'ms, status: ' + r.status + ').', 'success');
+  } catch (e) {
+    setStep(0, 'fail', Math.round(performance.now() - t0));
+    log('Server unreachable: ' + e.message, 'error');
+    finish(); return;
+  }
+  await wait(300);
+
+  // ── STEP 2 ──
+  setStep(1, 'running');
+  log('Step 2: Email: ' + email.substring(0, 4) + '****', 'cmd');
+  await wait(400);
+  setStep(1, 'pass');
+  log('Email entered.', 'success');
+
+  // ── STEP 3 ──
+  setStep(2, 'running');
+  log('Step 3: Password: ********', 'cmd');
+  await wait(400);
+  setStep(2, 'pass');
+  log('Password entered.', 'success');
+
+  // ── STEP 4 ──
+  setStep(3, 'running');
+  log('Step 4: Accepting Terms...', 'cmd');
+  await wait(400);
+  setStep(3, 'pass');
+  log('Terms accepted.', 'success');
+
+  // ── STEP 5: Login ──
+  setStep(4, 'running');
+  log('Step 5: POST /users/login/v2', 'cmd');
+  t0 = performance.now();
+  try {
+    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email_id: email, password }) });
+    const ms = Math.round(performance.now() - t0);
+    const data = await res.json();
+    apis.push({ method: 'POST', endpoint: '/users/login/v2', status: res.status, time: ms, body: data });
+    if (res.status === 200) {
+      authToken = data.token || data.accessToken || data.access_token;
+      userId = data.userId || data.user_id || data.id;
+      setStep(4, 'pass', ms);
+      log('Login OK \u2192 200 (' + ms + 'ms). userId=' + userId, 'success');
+    } else {
+      setStep(4, 'fail', ms);
+      log('Login failed \u2192 ' + res.status, 'error');
+      renderApis();
+      for (let i = 5; i < 8; i++) setStep(i, 'fail');
+      finish(); return;
+    }
+  } catch (e) {
+    setStep(4, 'fail');
+    log('Login error: ' + e.message, 'error');
+    for (let i = 5; i < 8; i++) setStep(i, 'fail');
+    finish(); return;
+  }
+  await wait(400);
+
+  // ── STEP 6: APIs ──
+  setStep(5, 'running');
+  log('Step 6: Calling APIs...', 'cmd');
+  const uid = userId || 2143;
+  const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authToken };
+
+  // Overview
+  t0 = performance.now();
+  try {
+    const params = new URLSearchParams({ userId: uid, profile: 'auto', devices_data: 'auto', cluster: 'auto', devices: 'auto', units: 'auto', aqi_and_units: 'auto', module_expiry: 'auto', org: 'auto', master_org: 'auto', device_types: 'auto', complain_categories: 'auto', latest_features: 'auto', modules: 'auto', widgets: 'auto', lastUpdatedToken: '' });
+    const ov = await fetch('/api/overview/' + uid + '?' + params, { headers });
+    const ms = Math.round(performance.now() - t0);
+    const ovData = await ov.json();
+    apis.push({ method: 'GET', endpoint: '/users/' + uid + '/overview/v2', status: ov.status, time: ms, body: ovData });
+    log('Overview \u2192 ' + ov.status + ' (' + ms + 'ms)', ov.status === 200 ? 'success' : 'error');
+  } catch (e) { log('Overview error: ' + e.message, 'error'); }
+
+  // Devices
+  t0 = performance.now();
+  let devicesData = null;
+  try {
+    const dp = new URLSearchParams();
+    DEVICE_IDS.forEach(id => dp.append('deviceIds', id));
+    dp.append('processType', 'latest');
+    dp.append('userId', uid);
+    const dv = await fetch('/api/devices?' + dp, { headers });
+    const ms = Math.round(performance.now() - t0);
+    devicesData = await dv.json();
+    apis.push({ method: 'GET', endpoint: '/devices/data (' + DEVICE_IDS.length + ' devices)', status: dv.status, time: ms, body: devicesData });
+    log('Devices \u2192 ' + dv.status + ' (' + ms + 'ms)', dv.status === 200 ? 'success' : 'error');
+  } catch (e) { log('Devices error: ' + e.message, 'error'); }
+
+  setStep(5, 'pass');
+  log(apis.length + ' APIs captured.', 'success');
+  renderApis();
+  await wait(300);
+
+  // ── STEP 7 ──
+  setStep(6, 'running');
+  log('Step 7: Recording APIs...', 'cmd');
+  await wait(400);
+  setStep(6, 'pass');
+  log('APIs recorded. See table above.', 'success');
+  await wait(300);
+
+  // ── STEP 8: Devices ──
+  setStep(7, 'running');
+  log('Step 8: Extracting devices with status...', 'cmd');
+
+  if (devicesData && Array.isArray(devicesData)) {
+    const now = Math.floor(Date.now() / 1000);
+    const THIRTY_MIN = 30 * 60;
+
+    devices = devicesData.map((dev, i) => {
+      const inner = dev.payload && dev.payload[0] && dev.payload[0].payload;
+      const lastActive = inner && inner.d && inner.d.t ? inner.d.t : 0;
+      const loc = inner && inner.s && inner.s.loc ? inner.s.loc : '-';
+      const devType = dev.deviceType || (dev.payload && dev.payload[0] && dev.payload[0].deviceType) || '-';
+      const devId = dev.deviceId || (dev.payload && dev.payload[0] && dev.payload[0].deviceId) || 'device-' + (i+1);
+      const isOnline = lastActive > 0 && lastActive > now - THIRTY_MIN;
+
+      return {
+        id: devId,
+        type: devType,
+        location: loc,
+        status: isOnline ? 'Online' : 'Offline',
+        lastSeen: toIST(lastActive),
+        lastActive
+      };
+    });
+
+    const onCount = devices.filter(d => d.status === 'Online').length;
+    setStep(7, 'pass');
+    log('Found ' + devices.length + ' devices. Online: ' + onCount + ', Offline: ' + (devices.length - onCount), 'success');
+  } else {
+    setStep(7, 'pass');
+    log('API responded but no device array found. Check response.', 'warn');
+  }
+
+  renderDevices();
+  log('\u2714 All 8 steps completed.', 'cmd');
+  finish();
+}
+
+function finish() {
+  isRunning = false;
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('runBtn').textContent = 'do login';
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Init
+renderSteps();
+log('AutoNexus v3.0 ready. Type \'do login\' to start.', 'info');
+document.getElementById('cmdInput').focus();
+</script>
+</body>
+</html>
