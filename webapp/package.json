@@ -1,0 +1,11 @@
+{
+  "name": "autonexus-webapp",
+  "version": "3.0.0",
+  "description": "AutoNexus — Envizom Test Automation Web App",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
