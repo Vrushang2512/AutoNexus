@@ -47,6 +47,13 @@ jobs:
           name: captured-apis
           path: playwright/test-results/captured-apis.json
 
+      - name: Upload overview results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overview-results
+          path: playwright/test-results/overview-results.json
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
